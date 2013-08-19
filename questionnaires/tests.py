@@ -7,8 +7,11 @@ Replace this with more appropriate tests for your application.
 
 from django.test import TestCase
 from questionnaires.models import Questionnaire, Page, Question, Level, Answer
+from questionnaires.models import Quiz
 from django.core.urlresolvers import reverse
 from questionnaires.views import _get_level, _get_outcome_changing_questions
+from questionnaires.views import _get_next_page
+from questionnaires.persistence import QuestionDB, AnswerDB
 
 
 def create_questionnaire(name='test', description='test'):
@@ -37,6 +40,21 @@ def create_level(questionnaire, threshold=5, name='default'):
 def create_answer(question, score=5, label='default'):
     return Answer.objects.create(question=question,
                                  label=label, score=score)
+
+
+def create_dict_pages(pages):
+    pages_dict = {}
+    for page in pages:
+        str_page = 'page%s' % page.id
+        pages_dict[str_page] = {}
+        questions = QuestionDB(page).get_questions()
+        for q in questions:
+            str_question = 'question%s' % q.id
+            pages_dict[str_page][str_question] = []
+            answers = AnswerDB(q).get_answers()
+            for answer in answers:
+                pages_dict[str_page][str_question].append(str(answer.id))
+    return pages_dict
 
 
 class QuestionnaireViewTests(TestCase):
@@ -82,18 +100,78 @@ class QuestionnaireViewTests(TestCase):
 
     def test_get_outcome_changing_questions(self):
         q = create_questionnaire()
+
         create_level(q, threshold=40, name='noob')
         create_level(q, threshold=60, name='medium')
         create_level(q, threshold=80, name='advanced')
         create_level(q, threshold=100, name='expert')
+
         p1 = create_page_for_questionnaire(q, 1)
         p2 = create_page_for_questionnaire(q, 2)
+
         q1 = create_question_on_page(p1)
-        create_answer(q1, -5)
-        create_answer(q1, 5)
+        create_answer(q1)
+        create_answer(q1)
+        create_answer(q1)
+
         q2 = create_question_on_page(p1)
-        create_answer(q2, 5)
-        create_question_on_page(p2)
+        create_answer(q2)
+        create_answer(q2)
+
+        q3 = create_question_on_page(p2)
+        create_answer(q3)
+        create_answer(q3)
+
+        q4 = create_question_on_page(p2)
+        create_answer(q4)
+        create_answer(q4)
+
+        pages = create_dict_pages(Page.objects.all())
+
+        create_answer(q1, -3)
+        create_answer(q1, 5)
+        create_answer(q1, -3)
+        create_answer(q2, 3)
+        create_answer(q2, -3)
+        create_answer(q3, -3)
+        create_answer(q3, -2)
+        create_answer(q4, 2)
+        create_answer(q4, -2)
+
+        max_lvl = q.get_max_level()
+        quiz1 = Quiz(q, pages, level='medium', points=45, max_level=max_lvl)
+        alternative_result1 = _get_outcome_changing_questions(quiz1)
+        self.assertEqual('noob', alternative_result1[1])
+        self.assertEqual(39, alternative_result1[2])
+
+        quiz2 = Quiz(q, pages, level='noob', points=34, max_level=max_lvl)
+        alternative_result2 = _get_outcome_changing_questions(quiz2)
+        self.assertEqual('medium', alternative_result2[1])
+        self.assertEqual(41, alternative_result2[2])
+
+        quiz3 = Quiz(q, pages, level='expert', points=90, max_level=max_lvl)
+        alternative_result3 = _get_outcome_changing_questions(quiz3)
+        self.assertEqual('advanced', alternative_result3[1])
+        self.assertEqual(79, alternative_result3[2])
+
+        quiz4 = Quiz(q, pages, level='expert', points=99, max_level=max_lvl)
+        alternative_result4 = _get_outcome_changing_questions(quiz4)
+        self.assertEqual(None, alternative_result4)
+
+    def test_get_next_page_with_1_page(self):
+        q = create_questionnaire()
+        p1 = create_page_for_questionnaire(q)
+        next_page = _get_next_page(q, p1)
+        self.assertEqual(next_page, p1)
+
+    def test_get_next_page_with_2_pages(self):
+        q = create_questionnaire()
+        p1 = create_page_for_questionnaire(q)
+        p2 = create_page_for_questionnaire(q)
+        next_page = _get_next_page(q, p1)
+        self.assertEqual(next_page, p2)
+        next_page = _get_next_page(q, p2)
+        self.assertEqual(next_page, p2)
 
 
 class QuestionnaireMethodTests(TestCase):
