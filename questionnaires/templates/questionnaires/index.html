@@ -1,0 +1,12 @@
+{% if questionnaire_list %}
+    <ul>
+    {% for questionnaire in questionnaire_list %}
+        <li style="font-size:20px;font-family:courier new">
+        <a href="{% url 'questionnaires:detail' questionnaire.id %}">
+        	{{ questionnaire.name }} - {{ questionnaire.description }} - {{ questionnaire.get_nr_of_questions }} questions</a>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No questionnaires are available.</p>
+{% endif %}

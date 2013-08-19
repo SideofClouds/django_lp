@@ -1,0 +1,21 @@
+<h1 style="text-align:center;"> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
+
+<p style="font-size:25px";>Number of pages: {{ questionnaire.page_set.count }} </p>
+
+<p style="font-size:25px;"> Number of questions: {{ nr_questions }}
+
+{% for page in questionnaire.page_set.all %}
+	<p style="font-family:arial;color:#0050f0;font-size:20px;">
+	{% if page.question_set.count == 1 %}
+		Page {{ forloop.counter }} has one question
+	{% else %}
+		Page {{ forloop.counter }} has {{ page.question_set.count }} questions
+	{% endif %}
+	<br /> </p>
+{% endfor %}
+<br />
+
+<form>
+<input type="button" value="Start Test" onclick="window.location.href=
+	'{% url 'questionnaires:qpage' questionnaire.id first_page.id %}'" style=font-size:18px>
+</form>

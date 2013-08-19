@@ -1,0 +1,41 @@
+{# <object style="height: 390px; width: 640px"><param name="movie" value="http://www.youtube.com/v/v1gTI4BOPUw?version=3"><param name="allowFullScreen" value="true"><param name="allowScriptAccess" value="always"><embed src="http://www.youtube.com/v/v1gTI4BOPUw?version=3" type="application/x-shockwave-flash" allowfullscreen="true" allowScriptAccess="always" width="640" height="390"></object> #}
+
+<h1 style="text-align:center;"> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
+<h1 style="text-align:center;"> <u> -Results- </u> </h1>
+
+<p style="font-size:22px">You scored {{ points }} points!</p>
+<p style="font-size:22px">Level: <u>{{ level }}</u></p>
+<p style="font-size:20px">Time taken: {{ elapsed_time }} seconds</p>
+
+<br/>
+{% if alternative_result != 'None' %}
+
+<p style="font-size:20px">
+	You would have gotten the <u>{{ new_level }}</u> level with {{ new_score }} points
+	if you would have selected these extra choices for the following questions: 
+</p>
+
+{% for question, answers in outcome_changing_questions %}
+	<p style="font-size:18px;">
+		Page {{ question.page.page_nr }} >> {{ question.text }}
+	</p>
+	{% for answer in answers %}
+		<li style="font-size:16px;padding-left:1em">
+			{{ answer.label }}
+		</li>
+	{% endfor %}
+	</br>
+{% endfor %}
+
+{% else %}
+	No alternative outcomes available.
+{% endif %}
+
+<p style="font-size:22px;">
+<a href="{% url 'questionnaires:detail' questionnaire.id %}">Re-take test</a>
+</p>
+
+<p style="font-size:22px;">
+<a href="{% url 'questionnaires:index'%}">Take other tests</a>
+</p>
+
