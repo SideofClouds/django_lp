@@ -18,7 +18,7 @@ def create_page_form(page):
             answers_choices.append((el.id, el.label))
         answers_choices = tuple(answers_choices)
 
-        form_attrs['question%s' % question.id] = forms.MultipleChoiceField(
+        form_attrs[str(question.id)] = forms.MultipleChoiceField(
             label=question.text,
             choices=answers_choices,
             widget=forms.CheckboxSelectMultiple(),

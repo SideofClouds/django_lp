@@ -2,17 +2,16 @@ from django.db import models
 
 
 class Quiz(object):
-    def __init__(self, questionnaire, pages, level, points, max_level):
-        self.questionnaire = questionnaire
-        self.pages = pages
+    def __init__(self, dict_pages={}, result={}, level='', points=0,
+                 max_level='', nr_of_questions=0, max_nr_answers=0, levels=[]):
+        self.dict_pages = dict_pages
+        self.result = result  # dict with pages & questions & selected answers
         self.level = level
         self.points = points
         self.max_level = max_level
-        self.plm = {'max_level': max_level,
-                    'points': points,
-                    'level': level,
-                    'pages': pages,
-                    'max_nr_answers': questionnaire.get_max_nr_answers()}
+        self.nr_of_questions = nr_of_questions
+        self.max_nr_answers = max_nr_answers
+        self.levels = levels
 
 
 class Questionnaire(models.Model):
@@ -22,6 +21,30 @@ class Questionnaire(models.Model):
 
     def __unicode__(self):
         return self.name + ' - ' + self.description
+
+    def to_quiz(self):
+        pages = self.page_set.all()
+        dict_pages = {}
+
+        for page in pages:
+            dict_pages[page.id] = {}
+            for question in page.question_set.all():
+                dict_pages[page.id][question.id] = []
+                for answer in question.answer_set.all():
+                    dict_pages[page.id][question.id].append([answer.id,
+                                                             answer.score,
+                                                             answer.label])
+        max_level = self.get_max_level()
+        max_level = [max_level.name, max_level.threshold]
+        nr_of_questions = self.get_nr_of_questions()
+        max_nr_answers = self.get_max_nr_answers()
+
+        levels = {}
+        for level in self.level_set.all().order_by('threshold'):
+            levels[level.name] = level.threshold
+
+        return Quiz(dict_pages, {}, '', 0, max_level,
+                    nr_of_questions, max_nr_answers, levels)
 
     def get_nr_of_questions(self):
         """

@@ -7,7 +7,7 @@ from django.http.response import HttpResponseRedirect
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from time import time
-from persistence import QuestionnaireDB, PageDB, LevelDB, AnswerDB, QuestionDB
+from persistence import QuestionnaireDB, PageDB, AnswerDB, QuestionDB
 from models import Quiz
 
 
@@ -37,7 +37,7 @@ def detail(request, questionnaire_id):
 
 def _get_next_page(questionnaire, page):
     """
-    Returns the next page from the questionnaire and the current page number.
+    Returns the next page from the questionnaire.
     """
     pages = PageDB(questionnaire).get_pages()
     i = 0
@@ -67,7 +67,7 @@ def display_page(request, questionnaire_id, page_id):
         if form.is_valid():
             quest_answr = form.cleaned_data
 
-            request.session['pages']["page%s" % page.id] = quest_answr
+            request.session['pages'][page.id] = quest_answr
 
             if page != last_page:
                 return HttpResponseRedirect(
@@ -96,47 +96,59 @@ def display_page(request, questionnaire_id, page_id):
     )
 
 
-def _get_question_changers(quiz, order, dif_pages,
+def _determine_level(levels, points):
+    """
+    Returns a string representing the level based on the points the user got.
+
+    Pre-conditions: - levels is a dictionary with strings as keys and integers
+                      as the values representing the thresholds
+                    - points is an integer representing the points acquired
+                      by the user
+    """
+    import operator
+    level = None
+    sorted_levels = sorted(levels.iteritems(), key=operator.itemgetter(1))
+    for el in sorted_levels:
+        if points <= el[1]:
+            level = el[0]
+            break
+
+    max_level = max(levels.iterkeys(), key=lambda threshold: levels[threshold])
+    if points >= levels[max_level]:
+        level = max_level
+    return level
+
+
+def _get_question_changers(quiz, order=True, diff_pages={},
                            compare=lambda x, y: x < y):
     """
     Returns a tuple containing a list of questions, each with a list of
     answers, the new level that would have resulted if the user had selected
     these extra answers, and the associated score.
 
-    Pre-conditions: - dif_pages is a dictionary containing dictionaries
-                      with question ids, each with a list containing the answers
+    Pre-conditions: - diff_pages is a dictionary containing dictionaries with
+                      question ids, each with a list containing the answers
                       that the user hasn't selected
-                    - order is a string representing the order by which the
-                      unselected answers should be sorted (ascending or
-                      descending depending if the user reached the highest
-                      level or not)
-                    quiz is a Quiz object containing the following:
-                    - a Questionnaire object
-                    - a dictionary containing dictionaries with question ids,
-                      each with a list containing the answers
-                      that the user selected
-                    - a u'string representing the level
-                      that the user obtained/reached
-                    - an integer representing the score that the user
-                      obtained
+                    - order is a bool value representing the order by which the
+                      unselected answers should be sorted
     """
-    max_nr_answers = quiz.questionnaire.get_max_nr_answers()
     i = 1
-    while i < max_nr_answers:
+    while i < quiz.max_nr_answers:
         question_changers = []
         aux_points = quiz.points
-        for page in dif_pages:
-            questions = dif_pages[page]
+        for page in diff_pages:
+            questions = diff_pages[page]
             maxy = 0
             chosen_question = None
             top_answers = None
 
             for q in questions:
-                answers = questions[q].order_by(order)[:i]
+                answers = sorted(questions[q], key=lambda x: x[1],
+                                 reverse=order)[:i]
                 score_sum = 0
 
                 for answer in answers:
-                    score_sum += answer.score
+                    score_sum += answer[1]
 
                 if compare(maxy, score_sum):
                     maxy = score_sum
@@ -144,11 +156,12 @@ def _get_question_changers(quiz, order, dif_pages,
                     top_answers = answers
 
             if chosen_question and top_answers:
-                question_changers.append([chosen_question, top_answers])
+                top_ans = [el[2] for el in top_answers]
+                question_changers.append([chosen_question, top_ans])
 
             aux_points += maxy
 
-            possible_new_level = _get_level(quiz.questionnaire, aux_points)
+            possible_new_level = _determine_level(quiz.levels, aux_points)
 
             if quiz.level != possible_new_level:
                 return question_changers, possible_new_level, aux_points
@@ -156,37 +169,42 @@ def _get_question_changers(quiz, order, dif_pages,
     return None
 
 
-def _get_dictionary_without_user_choices(pages):
+def _get_dictionary_without_user_choices(user_selection, dict_pages):
     """
     Returns a dictionary containing the questionnaire pages with questions, but
     without the choices selected by the user.
 
-    Pre-conditions: - pages is a dictionary containing dictionaries
-                      with question ids, each with a list containing the answers
-                      that the user selected
+    Pre-conditions: - user_selection is a dictionary containing dictionaries
+                      with question ids, each with a list containing
+                      the answers that the user selected
+                    - dict_pages is a dictionary like the user_selection but
+                      the questions contain all the answers from the quiz
     """
-    dif_pages = {}
-    for page in pages:
-        page_obj = PageDB().get_page_by_id(int(page[4:]))
-        dif_pages[page] = {}
-
-        for q in QuestionDB(page_obj).get_questions():
-            chosen_answers = map(int, pages[page]['question%s' % q.id])
-            dif_pages[page][q.id] = AnswerDB(q).get_answers_without(
-                                                    chosen_answers)
-    return dif_pages
+    diff_pages = {}
+    for page in dict_pages:
+        diff_pages[page] = {}
+        for questions in dict_pages[page]:
+            diff_pages[page][questions] = []
+            for answer in dict_pages[page][questions]:
+                if answer[0] not in map(int,
+                                        user_selection[page][str(questions)]):
+                    diff_pages[page][questions].append(answer)
+    return diff_pages
 
 
 def _get_outcome_changing_questions(quiz):
     """
-    Returns a question from each page of the questionneire with extra answers
+    Returns a question from each page of the questionnaire with extra answers
     such that the outcome(level) would have been different (better/worse) if
     the user would have selected them.
 
     Pre-conditions: quiz is a Quiz object containing the following:
-                    - a Questionnaire object
-                    - a dictionary containing dictionaries with question ids,
-                      each with a list containing the answers
+                    - a dictionary with page ids, containing dictionaries with
+                      question ids, each with a list containing
+                      all the answer ids from the questionnaire
+                    - a dictionary with page ids, containing dictionaries with
+                      question ids, each with a list containing lists
+                      representing the answers that have id, score, label
                       that the user selected
                     - a u'string representing the level
                       that the user obtained/reached
@@ -194,42 +212,22 @@ def _get_outcome_changing_questions(quiz):
                       obtained
                     - a level object representing the level with the highest
                       threshold
+                    - the number of questions from the questionnaire
+                    - the max number of answers among the questions from the
+                      questionnaire
+                    - a dictionary with level names as keys and integers
+                      representing thresholds as values
     """
-    dif_pages = _get_dictionary_without_user_choices(quiz.pages)
+    diff_pages = _get_dictionary_without_user_choices(quiz.result,
+                                                     quiz.dict_pages)
     result = None
-    if quiz.level != quiz.max_level.name:
-        result = _get_question_changers(quiz, '-score', dif_pages)
+    if quiz.level != quiz.max_level[0]:
+        result = _get_question_changers(quiz, True, diff_pages)
 
     if result == None:
-        result = _get_question_changers(quiz, 'score', dif_pages,
+        result = _get_question_changers(quiz, False, diff_pages,
                                         compare=lambda x, y: x > y)
-    if result != None:
-        for el in result[0]:
-            el[0] = QuestionDB().get_question_by_id(el[0])
-
     return result
-
-
-def _get_level(questionnaire, points):
-    """
-    Returns the level from a given questionnaire based on the number of points.
-
-    Pre-conditions: - questionnaire is a Questionnaire object
-                    - points is an integer representing the score obtained by
-                      the user
-    """
-    levels = LevelDB(questionnaire).order_levels_by('threshold')
-    level = None
-    for el in levels:
-        if points <= el.threshold:
-            level = el.name
-            break
-
-    final_level = levels[len(levels) - 1]
-    if points >= final_level.threshold:
-        level = final_level.name
-
-    return level
 
 
 def display_results(request, questionnaire_id):
@@ -250,9 +248,12 @@ def display_results(request, questionnaire_id):
             for answer in answers:
                 points += AnswerDB().get_answer_by_id(int(answer)).score
 
-    level = _get_level(questionnaire, points)
-    max_lv = questionnaire.get_max_level()
-    quiz = Quiz(questionnaire, request.session['pages'], level, points, max_lv)
+    quiz = questionnaire.to_quiz()
+    quiz.result = request.session['pages']
+    quiz.level = _determine_level(quiz.levels, points)
+    quiz.points = points
+    import pdb
+    pdb.set_trace()
     alternative_result = _get_outcome_changing_questions(quiz)
 
     request.session.flush()
@@ -260,16 +261,18 @@ def display_results(request, questionnaire_id):
         return render(request, 'questionnaires/results.html',
                   {'questionnaire': questionnaire,
                    'points': points,
-                   'level': level,
+                   'level': quiz.level,
                    'elapsed_time': elapsed_time,
                    'alternative_result': 'None'
                    }
     )
+    for el in alternative_result[0]:
+        el[0] = QuestionDB().get_question_by_id(el[0])
 
     return render(request, 'questionnaires/results.html',
                   {'questionnaire': questionnaire,
                    'points': points,
-                   'level': level,
+                   'level': quiz.level,
                    'elapsed_time': elapsed_time,
                    'outcome_changing_questions': alternative_result[0],
                    'new_level': alternative_result[1],

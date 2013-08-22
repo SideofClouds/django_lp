@@ -57,6 +57,9 @@ class AnswerDB(object):
     def get_answers(self):
         return self.question.answer_set.all()
 
+    def get_number_of_answers(self):
+        return self.question.answer_set.count()
+
     def get_answer_by_id(self, answer_id):
         return Answer.objects.get(pk=answer_id)
 
