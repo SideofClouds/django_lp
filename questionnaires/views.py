@@ -1,5 +1,3 @@
-# Create your views here.
-from django.views import generic
 from django.shortcuts import render, get_object_or_404, render_to_response
 from questionnaires.models import Questionnaire, Page
 from forms import create_page_form
@@ -8,20 +6,25 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from time import time
 from persistence import QuestionnaireDB, PageDB, AnswerDB, QuestionDB
-from models import Quiz
+from random import randrange
 
 
-class IndexView(generic.ListView):
-    template_name = 'questionnaires/index.html'
-    context_object_name = 'questionnaire_list'
+def index(request, user_is_cheating):
+    questionnaires = QuestionnaireDB().get_questionnaires()
+    good_questionnaires = []
+    for el in questionnaires:
+        if el.get_nr_of_questions() > 0:
+            good_questionnaires.append(el)
 
-    def get_queryset(self):
-        questionnaires = QuestionnaireDB().get_questionnaires()
-        good_questionnaires = []
-        for el in questionnaires:
-            if el.get_nr_of_questions() > 0:
-                good_questionnaires.append(el)
-        return good_questionnaires
+    if 'user_is_cheating' in request.session:
+        user_is_cheating = request.session['user_is_cheating']
+        request.session['user_is_cheating'] = 0
+    else:
+        user_is_cheating = 0
+
+    return render(request, 'questionnaires/index.html',
+                  {'questionnaire_list': good_questionnaires,
+                   'user_is_cheating': user_is_cheating})
 
 
 def detail(request, questionnaire_id):
@@ -48,19 +51,45 @@ def _get_next_page(questionnaire, page):
     return next_page
 
 
+def _is_user_cheating(dict_pages, page_ids, page_id):
+    if int(page_id) not in page_ids:
+        return True
+
+    if dict_pages == {}:
+        if int(page_id) != page_ids[0]:
+            return True
+
+    else:
+        if dict_pages.keys():
+            page1_id = int(dict_pages.keys()[0])
+            session_page = PageDB().get_page_by_id(page1_id)
+            qpage = PageDB().get_page_by_id(page_id)
+            if session_page.questionnaire != qpage.questionnaire:
+                return True
+    return False
+
+
 def display_page(request, questionnaire_id, page_id):
 
     questionnaire = get_object_or_404(Questionnaire, pk=questionnaire_id)
     page = get_object_or_404(Page, pk=page_id)
+
+    page_ids = [p.id for p in PageDB(questionnaire).get_pages()]
+
+    if 'pages' not in request.session:
+        request.session['pages'] = {}
+        request.session['start_time'] = time()
+
+    if _is_user_cheating(request.session['pages'], page_ids, int(page_id)):
+        request.session.flush()
+        request.session['user_is_cheating'] = randrange(1, 3)
+        return HttpResponseRedirect(reverse('questionnaires:index'))
+
     last_page = PageDB(questionnaire).get_latest('id')
 
     next_page = _get_next_page(questionnaire, page)
 
     PageForm = create_page_form(page)
-
-    if 'pages' not in request.session:
-        request.session['pages'] = {}
-        request.session['start_time'] = time()
 
     if request.method == 'POST':
         form = PageForm(request.POST)
@@ -232,6 +261,7 @@ def _get_outcome_changing_questions(quiz):
 
 def display_results(request, questionnaire_id):
     if 'pages' not in request.session.keys():
+        request.session['user_is_cheating'] = randrange(1, 3)
         return HttpResponseRedirect(
                     reverse(
                         'questionnaires:detail',
@@ -252,8 +282,7 @@ def display_results(request, questionnaire_id):
     quiz.result = request.session['pages']
     quiz.level = _determine_level(quiz.levels, points)
     quiz.points = points
-    import pdb
-    pdb.set_trace()
+
     alternative_result = _get_outcome_changing_questions(quiz)
 
     request.session.flush()
