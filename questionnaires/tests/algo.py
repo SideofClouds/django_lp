@@ -79,7 +79,7 @@ class QuestionnaireAlgorithmTests(TestCase):
                      '5': ['15', '16'],
                      '6': ['17', '19']}
         level = 'Expert'
-        points = 82
+        points = 84
         quiz = Quiz(dict_pages, result, level, points, max_level,
                     nr_of_questions, max_nr_answers, levels)
         alternative_result = _get_outcome_changing_questions(quiz)
