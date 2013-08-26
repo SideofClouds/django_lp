@@ -100,6 +100,15 @@ class Page(models.Model):
     def __unicode__(self):
         return "%s - page %s" % (self.questionnaire.name, self.page_nr)
 
+    def to_page_dict(self):
+        questions_dict = {}
+        questions = self.question_set.all()
+        for q in questions:
+            questions_dict[q.id] = [q.text, {}]
+            for answer in q.answer_set.all():
+                questions_dict[q.id][1][answer.id] = answer.label
+        return questions_dict
+
 
 class Question(models.Model):
     page = models.ForeignKey(Page)

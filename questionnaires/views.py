@@ -89,7 +89,8 @@ def display_page(request, questionnaire_id, page_id):
 
     next_page = _get_next_page(questionnaire, page)
 
-    PageForm = create_page_form(page)
+    dict_page = page.to_page_dict()
+    PageForm = create_page_form(dict_page)
 
     if request.method == 'POST':
         form = PageForm(request.POST)
