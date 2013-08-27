@@ -32,6 +32,7 @@ def detail(request, questionnaire_id):
     nrq = questionnaire.get_nr_of_questions()
 
     first_page = PageDB(questionnaire).get_pages()[0]
+    request.session.flush()
     return render(request, 'questionnaires/detail.html',
                   {'questionnaire': questionnaire,
                    'nr_questions': nrq,
