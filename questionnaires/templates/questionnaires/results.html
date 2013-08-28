@@ -1,11 +1,13 @@
-{# <object style="height: 390px; width: 640px"><param name="movie" value="http://www.youtube.com/v/v1gTI4BOPUw?version=3"><param name="allowFullScreen" value="true"><param name="allowScriptAccess" value="always"><embed src="http://www.youtube.com/v/v1gTI4BOPUw?version=3" type="application/x-shockwave-flash" allowfullscreen="true" allowScriptAccess="always" width="640" height="390"></object> #}
+{% load staticfiles %}
 
-<h1 style="text-align:center;"> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
-<h1 style="text-align:center;"> <u> -Results- </u> </h1>
+<link rel="stylesheet" type="text/css" href="{% static 'questionnaires/detail_style.css' %}" />
 
-<p style="font-size:22px">You scored {{ points }} points!</p>
-<p style="font-size:22px">Level: <u>{{ level }}</u></p>
-<p style="font-size:20px">Time taken: {{ elapsed_time }} seconds</p>
+<h1> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
+<h1> <u> -Results- </u> </h1>
+
+<p>You scored {{ points }} points!</p>
+<p>Level: <u>{{ level }}</u></p>
+<p>Time taken: {{ elapsed_time }} seconds</p>
 
 <br/>
 {% if alternative_result != 'None' %}

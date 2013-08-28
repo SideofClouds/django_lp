@@ -1,9 +1,15 @@
-<h1 style="text-align:center;color:green"> <u> Questionnaires </u> </h1>
+{% load staticfiles %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'questionnaires/index_style.css' %}" />
+
+<h1> <u> Questionnaires </u> </h1>
+
+<p id="cat"> </p>
 
 {% if questionnaire_list %}
     <ul>
     {% for questionnaire in questionnaire_list %}
-        <li style="font-size:20px;font-family:courier new">
+        <li>
         <a href="{% url 'questionnaires:detail' questionnaire.id %}">
         	{{ questionnaire.name }} - {{ questionnaire.description }} - {{ questionnaire.get_nr_of_questions }} questions</a>
         </li>
@@ -11,14 +17,14 @@
     </ul>
     {% if user_is_cheating == 1 %}
     	</br>
-    	<p style="font-size:30px;text-align:center"> Nice try </br>
+    	<p id="surprise"> Nice try </br>
     		<object style="height: 360px; width: 640px"><param name="movie" value="http://www.youtube.com/v/O-JotsMmsPE?version=3"><param name="allowFullScreen" value="true"><param name="allowScriptAccess" value="always"><embed src="http://www.youtube.com/v/O-JotsMmsPE?version=3" type="application/x-shockwave-flash" allowfullscreen="true" allowScriptAccess="always" width="640" height="390"></object>
     	</p>
     {% endif %}
 
 	{% if user_is_cheating == 2 %}
     	</br>
-    	<p style="font-size:30px;text-align:center"> Nice  try </br>
+    	<p id="surprise"> Nice  try </br>
     		<object style="height: 360px; width: 640px"><param name="movie" value="http://www.youtube.com/v/1gehTA2DTcE?version=3"><param name="allowFullScreen" value="true"><param name="allowScriptAccess" value="always"><embed src="http://www.youtube.com/v/1gehTA2DTcE?version=3" type="application/x-shockwave-flash" allowfullscreen="true" allowScriptAccess="always" width="640" height="390"></object>
     	</p>
     {% endif %}

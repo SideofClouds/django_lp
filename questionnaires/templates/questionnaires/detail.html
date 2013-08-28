@@ -1,11 +1,15 @@
-<h1 style="text-align:center;"> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
+{% load staticfiles %}
 
-<p style="font-size:25px";>Number of pages: {{ questionnaire.page_set.count }} </p>
+<link rel="stylesheet" type="text/css" href="{% static 'questionnaires/detail_style.css' %}" />
 
-<p style="font-size:25px;"> Number of questions: {{ nr_questions }}
+<h1> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
+
+<p id="para1"> Number of pages: {{ questionnaire.page_set.count }} </p>
+
+<p id="para1"> Number of questions: {{ nr_questions }} </p>
 
 {% for page in questionnaire.page_set.all %}
-	<p style="font-family:arial;color:#0050f0;font-size:20px;">
+	<p id="para2">
 	{% if page.question_set.count == 1 %}
 		Page {{ forloop.counter }} has one question
 	{% else %}
@@ -15,7 +19,8 @@
 {% endfor %}
 <br />
 
-<form>
+<form style="text-align: center;">
 <input type="button" value="Start Test" onclick="window.location.href=
-	'{% url 'questionnaires:qpage' questionnaire.id first_page.id %}'" style=font-size:18px>
+	'{% url 'questionnaires:qpage' questionnaire.id first_page.id %}'"
+	style="font-size:18px;">
 </form>

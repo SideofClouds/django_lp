@@ -1,0 +1,20 @@
+body {
+	background: white url("images/green-gradient.jpg");
+	background-repeat: repeat-x;
+	background-color: #FFFFF0;
+	margin: 50px;
+}
+
+h1 {
+	text-align: center;
+}
+
+p {
+	font-size:22px
+}
+
+a:link {
+	font-size: 20px;
+	font-family: courier new;
+	color: green;
+}

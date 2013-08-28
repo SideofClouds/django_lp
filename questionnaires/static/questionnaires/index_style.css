@@ -1,0 +1,42 @@
+body {
+	background: white url("images/blue-gradient.jpg");
+	background-repeat: repeat-x;
+	background-color: #FFFFF0;
+	margin: 50px;
+}
+
+h1 {
+	text-align: center;
+}
+
+
+a: link {
+	font-size: 20px;
+	font-family: courier new;
+	color: green;
+}
+
+li {
+	font-size: 22px;
+	font-family: courier new;
+}
+
+p {
+	font-size: 25px;
+	font-family: courier new;
+	color: red;
+}
+
+#surprise {
+	font-size: 25px;
+	font-family: courier new;
+	color: red;
+	text-align: center;
+}
+
+#cat {
+	background: white url("images/cat.jpg");
+	background-repeat: no-repeat;
+	
+	text-align: right;
+}

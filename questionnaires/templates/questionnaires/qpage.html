@@ -1,10 +1,14 @@
-<h1 style="text-align:center;"> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
+{% load staticfiles %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'questionnaires/qpage_style.css' %}" />
+
+<h1> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
 
 <form method="post" action="">{% csrf_token %}
 {{ form.as_p }}
 <input type="submit" value="Submit" />
 </form>
 
-<p style="text-align:center;font-size:24px;">
+<p id="para-page">
 	Page {{ page.page_nr }}
 </p>
