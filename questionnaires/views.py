@@ -53,6 +53,16 @@ def _get_next_page(questionnaire, page):
 
 
 def _is_user_cheating(dict_pages, page_ids, page_id):
+    """
+    The user is cheating if he 'jumps' over pages by entering a URL manually.
+    If the user changes the questionnaire in the middle of answering another,
+    if the page is changed or if both questionnaire and page are changed - the
+    user is cheating.
+
+    Pre-conditions: - dict_pages is a dictionary
+                    - page_ids is a list with page ids
+                    - page_id is an integer
+    """
     if int(page_id) not in page_ids:
         return True
 
@@ -71,7 +81,6 @@ def _is_user_cheating(dict_pages, page_ids, page_id):
 
 
 def display_page(request, questionnaire_id, page_id):
-
     questionnaire = get_object_or_404(Questionnaire, pk=questionnaire_id)
     page = get_object_or_404(Page, pk=page_id)
 
