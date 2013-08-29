@@ -9,12 +9,23 @@ h1 {
 	text-align: center;
 }
 
-p {
-	font-size:22px
+#para-stats {
+	font-size: 29px;
 }
 
-a:link {
-	font-size: 20px;
-	font-family: courier new;
-	color: green;
+#para-would {
+	font-size: 22px;
+}
+
+#para-question {
+	font-size: 18px;
+}
+
+li {
+	font-size: 16px;
+	padding-left: 1em;
+}
+
+#para-link {
+	font-size:22px;
 }

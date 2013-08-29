@@ -1,28 +1,28 @@
 {% load staticfiles %}
 
-<link rel="stylesheet" type="text/css" href="{% static 'questionnaires/detail_style.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'questionnaires/results_style.css' %}" />
 
 <h1> <u> {{ questionnaire.name }} - {{ questionnaire.description }} </u> </h1>
 <h1> <u> -Results- </u> </h1>
 
-<p>You scored {{ points }} points!</p>
-<p>Level: <u>{{ level }}</u></p>
-<p>Time taken: {{ elapsed_time }} seconds</p>
+<p id="para-stats"> You scored {{ points }} points!</p>
+<p id="para-stats"> Level: <u>{{ level }}</u></p>
+<p id="para-stats"> Time taken: {{ elapsed_time }} seconds</p>
 
 <br/>
 {% if alternative_result != 'None' %}
 
-<p style="font-size:20px">
+<p id="para-would">>
 	You would have gotten the <u>{{ new_level }}</u> level with {{ new_score }} points
 	if you would have selected these extra choices for the following questions: 
 </p>
 
 {% for question, answers in outcome_changing_questions %}
-	<p style="font-size:18px;">
+	<p id="para-question">
 		Page {{ question.page.page_nr }} >> {{ question.text }}
 	</p>
 	{% for answer in answers %}
-		<li style="font-size:16px;padding-left:1em">
+		<li>
 			{{ answer }}
 		</li>
 	{% endfor %}
@@ -33,11 +33,11 @@
 	No alternative outcomes available.
 {% endif %}
 
-<p style="font-size:22px;">
+<p id="para-link">
 <a href="{% url 'questionnaires:detail' questionnaire.id %}">Re-take test</a>
 </p>
 
-<p style="font-size:22px;">
+<p id="para-link">
 <a href="{% url 'questionnaires:index'%}">Take other tests</a>
 </p>
 

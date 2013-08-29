@@ -33,10 +33,3 @@ p {
 	color: red;
 	text-align: center;
 }
-
-#cat {
-	background: white url("images/cat.jpg");
-	background-repeat: no-repeat;
-	
-	text-align: right;
-}
